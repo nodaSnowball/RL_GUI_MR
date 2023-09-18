@@ -1,7 +1,7 @@
 # RL_GUI_MR
 A interface with rearrange task simulation environment. Rearrangement is to reach the target room configuration through agent's actions.
 ## Preparation
-You can install the required packages with commands below:
+You can install the required packages with commands below (or in the requirement.txt file):
   conda install -c conda-forge pybullet
   pip install pillow matplotlib gym opencv-python
 ## To start the game

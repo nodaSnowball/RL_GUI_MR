@@ -1,0 +1,2 @@
+conda install -c conda-forge pybullet
+pip install pillow matplotlib gym opencv-python

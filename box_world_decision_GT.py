@@ -66,7 +66,7 @@ class BoxWorld(gym.Env):
         self.num_correct_drops = 0
         self.prev_picked_color = None
         # self.img_w = 160
-        self.img_w = 80
+        self.img_w = 320
         self.obs_robot_init = np.zeros((self.img_w, self.img_w, self.img_w, 4), dtype=np.float32)
         self.fov = 90
         self.distance = 20
@@ -187,10 +187,12 @@ class BoxWorld(gym.Env):
         return state
 
     def gui_output(self):
-        bev = np.reshape(np.clip(self.bev, 0, 255), (640, 640, 3)).astype(np.uint8)
-        target_bev = np.reshape(np.clip(self.bev_target, 0, 255), (640, 640, 3)).astype(np.uint8)
         fpv_curr = np.reshape(np.clip(self.fpv_curr, 0, 255), (self.img_w, self.img_w, 3)).astype(np.uint8)
-        return [fpv_curr, bev, target_bev]
+        return fpv_curr
+
+    def get_target_bev(self):
+        target_bev = np.reshape(np.clip(self.bev, 0, 255), (640, 640, 3)).astype(np.uint8)
+        return target_bev
 
     def visualize(self, target=False):
         """
@@ -256,31 +258,17 @@ class BoxWorld(gym.Env):
             cameraTargetPosition=[6, 5.99, 0.5],
             cameraUpVector=[0, 0, 1])
 
-        tilt_bev_view_matrix = p.computeViewMatrix(
-            cameraEyePosition=[-2, self.length / 2, 12],
-            cameraTargetPosition=[self.length / 2, self.length / 2 - 0.01, 0.5],
-            cameraUpVector=[0, 0, 1])
-
         bev_projection_matrix = p.computeProjectionMatrixFOV(
             fov=90, aspect=1, nearVal=0.02, farVal=100)
 
         bev = p.getCameraImage(BEV_PIXEL_WIDTH * 4, BEV_PIXEL_WIDTH * 4,
                                bev_view_matrix, bev_projection_matrix,
                                flags=p.ER_NO_SEGMENTATION_MASK)[2]
-        tbev = p.getCameraImage(BEV_PIXEL_WIDTH * 4, BEV_PIXEL_WIDTH * 4,
-                                tilt_bev_view_matrix, bev_projection_matrix,
-                                flags=p.ER_NO_SEGMENTATION_MASK)[2]
-
 
         tdv = cv2.cvtColor(np.array(bev, dtype=np.float32), cv2.COLOR_RGBA2RGB).flatten()  # 160x160x4
-        tbev = cv2.cvtColor(np.array(tbev, dtype=np.float32), cv2.COLOR_RGBA2RGB).flatten()  # 160x160x4
-
         tdv = np.array(tdv, dtype=np.float32).flatten()  # 160x160x4
-        tbev = np.array(tbev, dtype=np.float32).flatten()
-
         # self.fpv_depth = fpv_depth  # (6400,)
         self.bev = tdv  # (76800,)
-        self.tbev = tbev
 
     def load_camera(self):
         """
@@ -440,6 +428,7 @@ class BoxWorld(gym.Env):
             info.update({"step_status": "reached max steps per episode"})
 
         if done:
+            score = sum(self.compute_distance_object_to_target() < self.rng)
             final_energy = sum(self.compute_distance_object_to_target())
             Energy_Remaining = final_energy / self.intial_energy
             success_rate = score / self.num_objects
@@ -452,6 +441,17 @@ class BoxWorld(gym.Env):
                          "Energy_Remaining": Energy_Remaining
                          })
         return state, reward, done, info
+
+    def get_result(self):
+        score = sum(self.compute_distance_object_to_target() < self.rng)
+        final_energy = sum(self.compute_distance_object_to_target())
+        Energy_Remaining = final_energy / self.intial_energy
+        success_rate = score / self.num_objects
+        if success_rate == 1:
+            success = 1
+        else:
+            success = 0
+        return [success_rate, success, Energy_Remaining]
 
     def move_agent(self, fwd_dist, fwd_drift):
         pos, ori = p.getBasePositionAndOrientation(self.robot)

@@ -134,6 +134,12 @@ class HumanPlay:
             self.game_window.destroy()
         if self.play_again_window is not None:
             self.play_again_window.destroy()
+
+    def exit(self):
+        if self.game_window is not None:
+            self.game_window.destroy()
+        if self.play_again_window is not None:
+            self.play_again_window.destroy()
         self.menu_window.destroy()
 
     def play_again_box(self):
@@ -198,7 +204,7 @@ class HumanPlay:
                   command=lambda x=1: self.reset_game(x)).pack()
         tk.Button(self.menu_window, width=20, font=font, text="Evaluate", fg="blue",
                   command=lambda x=2: self.reset_game(x)).pack()
-        tk.Button(self.menu_window, width=20, font=font, text="Exit", fg="black", command=self.quit).pack()
+        tk.Button(self.menu_window, width=20, font=font, text="Exit", fg="black", command=self.exit).pack()
 
     def reset_game_window(self, mode):
         if self.game_window is not None:

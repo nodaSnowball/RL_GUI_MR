@@ -354,7 +354,7 @@ class BoxWorld(gym.Env):
         input: action = integer able to fulfill one of these conditions
         output: next state
         """
-        reward = -0.01
+        reward = -0.0
         done = False
         info = {}
         score = self.prev_score

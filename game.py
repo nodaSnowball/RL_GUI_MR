@@ -130,8 +130,10 @@ class HumanPlay:
         ok_button.pack(pady=10)
 
     def quit(self):
-        self.game_window.destroy()
-        self.play_again_window.destroy()
+        if self.game_window is not None:
+            self.game_window.destroy()
+        if self.play_again_window is not None:
+            self.play_again_window.destroy()
         self.menu_window.destroy()
 
     def play_again_box(self):
@@ -182,12 +184,12 @@ class HumanPlay:
         self.idx_drop = 4
 
         self.observation = self.env.gui_output()
+        self.target_bev = self.env.get_target_bev()
         self.reset_game_window(mode)
         self.update_canvas()
 
     def build_menu_window(self):
         font = ('Arial', 14)
-
         self.game_mode = 'train'  # 1 for train, 2 for eval
 
         tk.Button(self.menu_window, width=20, font=font, text="Manual Instruction", fg="red",
@@ -196,7 +198,7 @@ class HumanPlay:
                   command=lambda x=1: self.reset_game(x)).pack()
         tk.Button(self.menu_window, width=20, font=font, text="Evaluate", fg="blue",
                   command=lambda x=2: self.reset_game(x)).pack()
-        tk.Button(self.menu_window, width=20, font=font, text="End Episode", fg="black", command=self.manual_end).pack()
+        tk.Button(self.menu_window, width=20, font=font, text="Exit", fg="black", command=self.quit).pack()
 
     def reset_game_window(self, mode):
         if self.game_window is not None:
@@ -227,9 +229,8 @@ class HumanPlay:
                                                 fill='gray60', font=('Arial', 10))
         self.txt_img2 = self.canvas.create_text(950, 500, text='Target BEV',
                                                 fill='gray60', font=('Arial', 10))
-        self.fpv = self.observation[0]
+        self.fpv = self.observation
         self.fpv = ImageTk.PhotoImage(Image.fromarray(self.fpv).resize((400, 400)))
-        self.target_bev = self.observation[1]
         self.target_bev = ImageTk.PhotoImage(Image.fromarray(self.target_bev).resize((400, 400)))
 
         self.fpv_label = self.canvas.create_image(150, 50, anchor=tk.NW, image=self.fpv)
@@ -239,6 +240,8 @@ class HumanPlay:
         self.line2 = self.canvas.create_line(850, 250, 870, 260, fill="red", width=2)
         self.line3 = self.canvas.create_line(850, 250, 870, 240, fill="red", width=2)
         self.description = self.canvas.create_text(900, 230, text='initial orientation', fill='red')
+        self.exit = self.canvas.create_text(650, 30, text='press ESC to end this game', fill='red',
+                                            font=('Arial', 15))
 
         if self.in_training_mode():
             self.txt_steps_id = self.canvas.create_text(100, 570, text='steps taken',
@@ -268,23 +271,16 @@ class HumanPlay:
                                                         fill='gray40', font=('Arial', 18))
 
     def update_canvas(self):
-        self.fpv = self.observation[0]
+        self.fpv = self.observation
         self.fpv = ImageTk.PhotoImage(Image.fromarray(self.fpv).resize((400, 400)))
         self.canvas.itemconfig(self.fpv_label, image=self.fpv)
-        # target_bev = self.observation[2]
-        # target_bev = ImageTk.PhotoImage(Image.fromarray(target_bev).resize((400, 400)))
-        # self.canvas.itemconfigure(self.target_bev_label, image=target_bev)
 
         self.canvas.itemconfig(self.num_steps_id, text=str(self.step_count))
-        self.canvas.itemconfig(self.content_info_id, text=self.info)
 
         if self.in_training_mode():
+            self.canvas.itemconfig(self.content_info_id, text=self.info)
             self.canvas.itemconfig(self.num_reward_id, text=str(self.reward))
             self.canvas.itemconfig(self.num_totalreward_id, text=str(self.episode_reward))
-
-    def manual_end(self):
-        tkinter.messagebox.showinfo("Manual End", "Episode results discarded.")
-        self.play_again_box()
 
     def upon_episode_completion(self):
         save = tkinter.messagebox.askquestion("Save", f"Episode ended, total reward of the game: {self.episode_reward}"
@@ -309,6 +305,7 @@ class HumanPlay:
 
         tick = time.time()
         savename = str(self.user) + '_' + str(tick)
+        result = self.env.get_result()
 
         with open(path, 'a', newline='') as log_file:
             schema = ['user', 'game_mode', 'num_steps', 'success', 'fixed_strict', 'Energy_Remaining']
@@ -316,9 +313,9 @@ class HumanPlay:
             writer.writerow({'user': self.user,
                              'game_mode': self.game_mode,
                              'num_steps': self.step_count,
-                             'success': self.info['success'],
-                             'fixed_strict': self.info['fixed_strict'],
-                             'Energy_Remaining': self.info['Energy_Remaining']})
+                             'success': result[0],
+                             'fixed_strict': result[1],
+                             'Energy_Remaining': result[2]})
 
     def move(self, action):
         action = self.act2idx[action]
@@ -332,12 +329,11 @@ class HumanPlay:
     def after_move(self):
         self.update_canvas()
         if self.done:
-            time.sleep(2.0)
+            time.sleep(0.5)
             self.upon_episode_completion()
 
     def keypress(self, event):
         if event.char == ' ' and self.env_choose <= 8:  # Space bar (drop brick in current location)
-            self.data.append([self.observation.tolist(), self.action_idx])
             self.observation, self.reward, self.done = self.env.step(self.action_idx)
             self.episode_reward += self.reward
             self.step_count += 1

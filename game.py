@@ -31,7 +31,7 @@ class HumanPlay:
                           " this note any time through menu window. \n\nAbout saving results: after each game, you " \
                           "can choose to save the result, but ending a game\nmanually will skip this step. " \
                           "Thus, while collecting results, please " \
-                          "keep input actions until the\ngame ends by itself. The maximum step of a game is 600. " \
+                          "keep input actions until the\ngame ends by itself. The maximum step of a game is 1000. " \
                           "Thanks for your patience and hope\nyou enjoy this!" \
                           ""
 
@@ -213,6 +213,8 @@ class HumanPlay:
         self.game_window = Toplevel()
         self.game_window.geometry('+500+500')
         self.game_window.title('Human Performance Benchmarking')
+        tk.Button(self.game_window, text='Quit', font=('Arial', 14), fg='black',
+                  command=self.upon_episode_completion).pack(side='bottom')
         self.game_window.bind("<Key>", self.keypress)
         self.game_window.bind("<Left>", lambda event: self.move('L'))
         self.game_window.bind("<Right>", lambda event: self.move('R'))
@@ -246,8 +248,9 @@ class HumanPlay:
         self.line2 = self.canvas.create_line(850, 250, 870, 260, fill="red", width=2)
         self.line3 = self.canvas.create_line(850, 250, 870, 240, fill="red", width=2)
         self.description = self.canvas.create_text(900, 230, text='initial orientation', fill='red')
-        self.exit = self.canvas.create_text(650, 30, text='press ESC to end this game', fill='red',
-                                            font=('Arial', 15))
+        # self.exit = self.canvas.create_text(650, 30, text='press ESC to end this game', fill='red',
+        #                                     font=('Arial', 15))
+
 
         if self.in_training_mode():
             self.txt_steps_id = self.canvas.create_text(100, 570, text='steps taken',

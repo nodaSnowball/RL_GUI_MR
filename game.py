@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 import json
 import time
 
-from .box_world_decision_GT import BoxWorld
+from box_world_decision_GT import BoxWorld
 
 
 class HumanPlay:
@@ -26,7 +26,8 @@ class HumanPlay:
                           " the robot;\nanother is the target room configuration that we want to achieve. Your task " \
                           "is to control the robot\nwith the fpv image and move the object in the environment to " \
                           "reach the target room configuration.\nAt the beginning of each game, the agent will always" \
-                          " be toward to the left (initial orientation)\n\nUtilize the actions above and you can open" \
+                          " be reset to the center and toward to the\nleft (initial orientation)\n\nUtilize the " \
+                          "actions above and you can open" \
                           " this note any time through menu window. \n\nAbout saving results: after each game, you " \
                           "can choose to save the result, but ending a game\nmanually will skip this step. " \
                           "Thus, while collecting results, please " \
@@ -254,7 +255,9 @@ class HumanPlay:
                                                               fill='gray40', font=('Arial', 18))
             self.txt_info_id = self.canvas.create_text(1000, 570, text='info',
                                                        fill='gray60', font=('Arial', 12))
-            self.content_info_id = self.canvas.create_text(1000, 600, text='please take your first step',
+            self.content_info_id = self.canvas.create_text(1000, 600, text='The robot has been reset to the center of'
+                                                                           'the map and toward to the left,\nplease '
+                                                                           'take your first step',
                                                            fill='gray40', font=('Arial', 12))
             self.txt_totalreward_id = self.canvas.create_text(500, 570, text=self.info,
                                                               fill='gray60', font=('Arial', 12))
